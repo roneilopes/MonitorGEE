@@ -1,11 +1,11 @@
-/*Codigo para Executação de um monitorador de gases GEE em aviário usando a placa lógica arduino e alguns componentes
+/*Codigo para Executação de um monitorador de gases GEE (Gases do Efeito Estufa) em aviário usando a placa lógica arduino e alguns componentes
   Esse trabalho é para vim de pesquisa de Iniciação Cientifíca da UFMT-Cuiabá
   
 **Autor: Ronei Lopes dos Santos -> Graduando em Agronomia
   Componentes utilizados:
   • Microcontrolador Arduino UNO R3;
   • Sensor MQ4 -> Conexão: **1º Perna -> GND, 2º -> pin 2, 3° -> A2, 4º -> 5v;
-  • Sensor MQ-135 -> 
+  • Sensor MQ-135 -> Conexão: **1º Perna -> GND, 2º -> pin 4, 3° -> A0, 4º -> 5v;
   • Módulo Micro SD -> Conexão: ** MOSI -> pin 11, ** MISO -> pin 12,  ** CLK -> pin 13, ** CS -> pin 10;
   • Módulo RTC DS3231 -> Conexão: **GND -> GND, ** VCC -> 5v,  ** SDA -> A4, ** SCL -> A5;
   • protoboard 400 furos.
@@ -17,7 +17,12 @@
 #include <DS3231.h>   // Biblioteca para manipulação do DS3231
 
 #define MQ4_analog A2
-#define MQ4_dig 7
+#define MQ4_dig 2
+#define MQ135_analog A0
+#define MQ135_dig 4
+
+#define GasCO2 1
+#define GasN2O 2
 
 int valor_analog;
 int valor_dig;
@@ -29,17 +34,16 @@ File arquivo;              //Declarando o objeto responsavel para escrever/ler o
 DS3231 rtc;                // Declarando o objeto do tipo DS3231
 RTCDateTime dataehora;     // Declarando o objeto do tipo RTCDateTime
 
-DHT dht(DHTPIN, DHTTYPE);  // Declarando o objeto responsável pela comunicação/sensor
-
 void setup()
 {
   Serial.begin(9600);     // Iniciando a comunicação Serial
   pinMode(MQ4_analog, INPUT);
   pinMode(MQ4_dig, INPUT);
+  pinMode(MQ135_analog, INPUT);
+  pinMode(MQ135_dig, INPUT);
 
   rtc.begin();            // Iniciando o RTC DS3231
   //rtc.setDateTime(__DATE__, __TIME__);   // Configurando valores iniciais do RTC 3231 (carregar o codigo 2x para o Arduino, sendo que na segunda comente esse comando)
-  dht.begin();
 
   Serial.println ("Verificando conexão com o cartão SD");
   Serial.println ("-----------------------------------");
@@ -84,13 +88,77 @@ void setup()
 
 void loop() 
 {
-   valor_analog = analogRead(MQ4_analog); 
-   valor_dig = digitalRead(MQ4_dig);
-   Serial.print(valor_analog);
-   Serial.print(" || ");
-   if(valor_dig == 0)
-     Serial.println("GAS DETECTADO !!!");
-   else 
-     Serial.println("GAS AUSENTE !!!");
-   delay(500);
+  dataehora = rtc.getDateTime();     //Atribuindo valores instantâneos de data e hora à instancia dataehora
+  if (i == 1){
+    Serial.println ("___________Dados Lidos do RTC 3231, MQ-4 & MQ-135_____________ \n");      //Imprimindo o Dia
+    Serial.println ("  Data\t\t Hora\t   MQ4(CH4)\t MQ-135(CO2)\t MQ-135(N2O)");
+  }
+  
+  Serial.print(dataehora.day);      //Imprimindo o Dia
+  Serial.print("/");
+  Serial.print(dataehora.month);    //Imprimindo o Mês
+  Serial.print("/");
+  Serial.print(dataehora.year);     //Imprimindo o Ano
+  Serial.print("\t");
+  Serial.print(dataehora.hour);     //Imprimindo a Hora
+  Serial.print(":");
+  Serial.print(dataehora.minute);   //Imprimindo o Minuto
+  Serial.print(":");
+  Serial.print(dataehora.second);   //Imprimindo o Segundo
+  Serial.print("\t\t");
+  Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
+  Serial.print("\t");
+  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+  Serial.print("\t");
+  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+  Serial.print("\t");
+  Serial.println("");
+
+
+ //Bloco para gravar os dados lidos pelo DHT22 e RTC
+ 
+  File arquivo = SD.open("DateLog.txt", FILE_WRITE); // Abre o Arquivo
+  if (arquivo) {
+    arquivo.print(dataehora.day);      //Armazena no arquivo o Dia
+    arquivo.print("/");
+    arquivo.print(dataehora.month);    //Armazena no arquivo o Mês
+    arquivo.print("/");
+    arquivo.print(dataehora.year);     //Armazena no arquivo o Ano
+    arquivo.print("\t");
+    arquivo.print(dataehora.hour);     //Armazena no arquivo a Hora
+    arquivo.print(":");
+    arquivo.print(dataehora.minute);   //Armazena no arquivo o Minuto
+    arquivo.print(":");
+    arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
+    arquivo.print("\t\t");
+    arquivo.print(dht.readTemperature());   //Armazena no arquivo a Temperatura
+    arquivo.print("\t\t");
+    arquivo.print(dht.readHumidity());      //Armazena no arquivo a Umidade
+    arquivo.println("");
+    arquivo.close();           // Fechamos o arquivo
+  }
+
+  delay (900000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
+  i +=1;
+
+}
+
+int GetMQ4(){
+  valor_analog = analogRead(MQ4_analog); 
+  valor_dig = digitalRead(MQ4_dig);
+  
+  Serial.print(" || ");
+  if(valor_dig == 0)
+    Serial.println("GAS DETECTADO !!!");
+    return valor_analog;
+  else 
+    Serial.println("GAS AUSENTE !!!");
+  delay(500);
+}
+
+int GetMQ135(int gasId){
+  if ( gasId == 1 ) {
+     return calculaGasPPM(CO2Curve);
+  } else if ( gas_id == 2 ) {
+     return calculaGasPPM(N2OCurve);
 }

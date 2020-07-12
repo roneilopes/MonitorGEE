@@ -105,13 +105,13 @@ void loop()
   Serial.print(dataehora.minute);   //Imprimindo o Minuto
   Serial.print(":");
   Serial.print(dataehora.second);   //Imprimindo o Segundo
-  Serial.print("\t\t");
+  Serial.print("\t");
   Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
   Serial.print("\t");
   // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
   // Serial.print("\t");
   // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
-  Serial.print("\t");
+  //Serial.print("\t");
   Serial.println("");
 
 
@@ -130,14 +130,14 @@ void loop()
     arquivo.print(dataehora.minute);   //Armazena no arquivo o Minuto
     arquivo.print(":");
     arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
-    arquivo.print("\t\t");
-    Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
-    Serial.print("\t");
-    // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
-    // Serial.print("\t");
-    // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
-    Serial.print("\t");
-    Serial.println("");
+    arquivo.print("\t");
+    arquivo.print(GetMQ4());   //Imprimindo o Valor de MQ4
+    arquivo.print("\t");
+    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+    // arquivo.print("\t");
+    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+    //arquivo.print("\t");
+    arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
   }
 
@@ -151,12 +151,14 @@ int GetMQ4(){
   valor_dig = digitalRead(MQ4_dig);
   
   Serial.print(" || ");
-  if(valor_dig == 0)
+  if(valor_dig == 0){
+    return valor_analog;
     Serial.println("GAS DETECTADO !!!");
+  }
+  else{
     return valor_analog;
-  else 
     Serial.println("GAS AUSENTE !!!");
-    return valor_analog;
+  }
   delay(500);
 }
 
@@ -165,12 +167,14 @@ int GetMQ4(){
 //   valor_dig = digitalRead(MQ135_dig);
   
 //   Serial.print(" || ");
-//   if(valor_dig == 0)
+//   if(valor_dig == 0){
 //     Serial.println("GAS DETECTADO !!!");
 //     return valor_analog;
-//   else 
+//   }
+//   else{
 //     Serial.println("GAS AUSENTE !!!");
 //     return valor_analog;
+//   }
 //   delay(500);
 //   // if ( gasId == 1 ) {
 //   //    return calculaGasPPM(CO2Curve);

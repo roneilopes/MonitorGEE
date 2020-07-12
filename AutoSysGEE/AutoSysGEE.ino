@@ -131,14 +131,17 @@ void loop()
     arquivo.print(":");
     arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
     arquivo.print("\t\t");
-    arquivo.print(dht.readTemperature());   //Armazena no arquivo a Temperatura
-    arquivo.print("\t\t");
-    arquivo.print(dht.readHumidity());      //Armazena no arquivo a Umidade
-    arquivo.println("");
+    Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
+    Serial.print("\t");
+    Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+    Serial.print("\t");
+    Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+    Serial.print("\t");
+    Serial.println("");
     arquivo.close();           // Fechamos o arquivo
   }
 
-  delay (900000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
+  delay (3000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
   i +=1;
 
 }
@@ -153,12 +156,24 @@ int GetMQ4(){
     return valor_analog;
   else 
     Serial.println("GAS AUSENTE !!!");
+    return valor_analog;
   delay(500);
 }
 
-int GetMQ135(int gasId){
-  if ( gasId == 1 ) {
-     return calculaGasPPM(CO2Curve);
-  } else if ( gas_id == 2 ) {
-     return calculaGasPPM(N2OCurve);
+int GetMQ135(){
+  valor_analog = analogRead(MQ135_analog); 
+  valor_dig = digitalRead(MQ135_dig);
+  
+  Serial.print(" || ");
+  if(valor_dig == 0)
+    Serial.println("GAS DETECTADO !!!");
+    return valor_analog;
+  else 
+    Serial.println("GAS AUSENTE !!!");
+    return valor_analog;
+  delay(500);
+  // if ( gasId == 1 ) {
+  //    return calculaGasPPM(CO2Curve);
+  // } else if ( gas_id == 2 ) {
+  //    return calculaGasPPM(N2OCurve);
 }

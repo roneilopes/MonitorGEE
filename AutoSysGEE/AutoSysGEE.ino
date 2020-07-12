@@ -18,6 +18,7 @@
 
 #define MQ4_analog A2
 #define MQ4_dig 2
+
 #define MQ135_analog A0
 #define MQ135_dig 4
 
@@ -117,7 +118,7 @@ void loop()
 
  //Bloco para gravar os dados lidos pelo DHT22 e RTC
  
-  File arquivo = SD.open("DateLog.txt", FILE_WRITE); // Abre o Arquivo
+  File arquivo = SD.open("DadosGEE.txt", FILE_WRITE); // Abre o Arquivo
   if (arquivo) {
     arquivo.print(dataehora.day);      //Armazena no arquivo o Dia
     arquivo.print("/");
@@ -151,9 +152,10 @@ int GetMQ4(){
   valor_dig = digitalRead(MQ4_dig);
   
   Serial.print(" || ");
-  if(valor_dig == 0)
+  if(valor_dig == 0){
     Serial.println("GAS DETECTADO !!!");
     return valor_analog;
+  }
   else 
     Serial.println("GAS AUSENTE !!!");
     return valor_analog;
@@ -165,9 +167,10 @@ int GetMQ135(){
   valor_dig = digitalRead(MQ135_dig);
   
   Serial.print(" || ");
-  if(valor_dig == 0)
+  if(valor_dig == 0) {
     Serial.println("GAS DETECTADO !!!");
     return valor_analog;
+  }
   else 
     Serial.println("GAS AUSENTE !!!");
     return valor_analog;

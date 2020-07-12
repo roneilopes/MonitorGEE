@@ -28,6 +28,19 @@ int valor_analog;
 int valor_dig;
 int i = 1;
 
+float CH4Curve[3]  =  {2.34,0.25,-0.35};  //curva CH4 aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
+                                          //p1: (log220.2466, log1.7793), p2: (log10409,37, log 0,4466)
+                                          //inclinacao = (Y2-Y1)/(X2-X1)
+                                          //vetor={x, y, inclinacao}
+
+float CO2Curve[3]  =  {1,0.36,-0.35};  //curva CO2 aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
+                                          //p1: (log10, log2.3), p2: (log200, log0,8)
+                                          //inclinacao = (Y2-Y1)/(X2-X1)
+                                          //vetor={x, y, inclinacao}
+
+
+
+
 const int chipSelect = 10; // declarando o pino responsável por ativar o módulo SD
 File arquivo;              //Declarando o objeto responsavel para escrever/ler o arquivo no Cartão SD
 
@@ -132,7 +145,7 @@ void loop()
     arquivo.print("\t\t");
     arquivo.print(GetMQ4());   //Imprimindo o Valor de MQ4
     arquivo.print("\t");
-    arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+    arquivo.print(GetMQ135(GasCO2));   //Imprimindo o Valor de MQ135 (CO2)
     arquivo.print("\t");
     arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
     arquivo.print("\t");
@@ -152,7 +165,7 @@ int GetMQ4() {
   delay(500);
 }
 
-int GetMQ135(){
+int GetMQ135(int gasId){
   valor_analog = analogRead(MQ135_analog);
   valor_dig = digitalRead(MQ135_dig);
   return valor_analog;
@@ -165,8 +178,8 @@ int GetMQ135(){
   //   return valor_analog;
   // }
   delay(500);
-  // if ( gasId == 1 ) {
-  //    return calculaGasPPM(CO2Curve);
+  if ( gasId == 1 ) {
+      return calculaGasPPM(CO2Curve);
   // } else if ( gas_id == 2 ) {
   //    return calculaGasPPM(N2OCurve);
 }

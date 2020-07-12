@@ -18,8 +18,8 @@
 
 #define MQ4_analog A2
 #define MQ4_dig 2
-// #define MQ135_analog A0
-// #define MQ135_dig 4
+#define MQ135_analog A0
+#define MQ135_dig 4
 
 #define GasCO2 1
 #define GasN2O 2
@@ -39,8 +39,8 @@ void setup()
   Serial.begin(9600);     // Iniciando a comunicação Serial
   pinMode(MQ4_analog, INPUT);
   pinMode(MQ4_dig, INPUT);
-  // pinMode(MQ135_analog, INPUT);
-  // pinMode(MQ135_dig, INPUT);
+  pinMode(MQ135_analog, INPUT);
+  pinMode(MQ135_dig, INPUT);
 
   rtc.begin();            // Iniciando o RTC DS3231
   //rtc.setDateTime(_DATE, __TIME_);   // Configurando valores iniciais do RTC 3231 (carregar o codigo 2x para o Arduino, sendo que na segunda comente esse comando)
@@ -105,23 +105,17 @@ void loop()
   Serial.print(dataehora.minute);   //Imprimindo o Minuto
   Serial.print(":");
   Serial.print(dataehora.second);   //Imprimindo o Segundo
-  Serial.print("\t");
+  Serial.print("\t\t");
   Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
   Serial.print("\t");
-  // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
-  // Serial.print("\t");
-  // Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
-  //Serial.print("\t");
+  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+  Serial.print("\t");
+  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+  Serial.print("\t");
   Serial.println("");
 
+//Bloco para gravar os dados lidos pelo RTC, MQ4 e MQ135
 
-<<<<<<< HEAD
- //Bloco para gravar os dados lidos pelo DHT22 e RTC
- 
-=======
-  //Bloco para gravar os dados lidos pelo DHT22 e RTC
-
->>>>>>> 99ad5b6e82a97318113c035d3fa1c6756cdca1b3
   File arquivo = SD.open("DadosGEE.txt", FILE_WRITE); // Abre o Arquivo
   if (arquivo) {
     arquivo.print(dataehora.day);      //Armazena no arquivo o Dia
@@ -138,10 +132,10 @@ void loop()
     arquivo.print("\t\t");
     arquivo.print(GetMQ4());   //Imprimindo o Valor de MQ4
     arquivo.print("\t");
-    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
-    // arquivo.print("\t");
-    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
-    //arquivo.print("\t");
+    arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+    arquivo.print("\t");
+    arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+    arquivo.print("\t");
     arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
   }
@@ -154,37 +148,25 @@ void loop()
 int GetMQ4() {
   valor_analog = analogRead(MQ4_analog);
   valor_dig = digitalRead(MQ4_dig);
-<<<<<<< HEAD
-  
-  if(valor_dig == 0){
-=======
-
-  if (valor_dig == 0) {
->>>>>>> 99ad5b6e82a97318113c035d3fa1c6756cdca1b3
-    return valor_analog;
-  }
-  else {
-    return valor_analog;
-  }
+  return valor_analog;
   delay(500);
 }
 
-// int GetMQ135(){
-//   valor_analog = analogRead(MQ135_analog);
-//   valor_dig = digitalRead(MQ135_dig);
-
-//   Serial.print(" || ");
-//   if(valor_dig == 0){
-//     Serial.println("GAS DETECTADO !!!");
-//     return valor_analog;
-//   }
-//   else{
-//     Serial.println("GAS AUSENTE !!!");
-//     return valor_analog;
-//   }
-//   delay(500);
-//   // if ( gasId == 1 ) {
-//   //    return calculaGasPPM(CO2Curve);
-//   // } else if ( gas_id == 2 ) {
-//   //    return calculaGasPPM(N2OCurve);
-// }
+int GetMQ135(){
+  valor_analog = analogRead(MQ135_analog);
+  valor_dig = digitalRead(MQ135_dig);
+  return valor_analog;
+  // if(valor_dig == 0){
+  //   Serial.println("GAS DETECTADO !!!");
+  //   return valor_analog;
+  // }
+  // else{
+  //   Serial.println("GAS AUSENTE !!!");
+  //   return valor_analog;
+  // }
+  delay(500);
+  // if ( gasId == 1 ) {
+  //    return calculaGasPPM(CO2Curve);
+  // } else if ( gas_id == 2 ) {
+  //    return calculaGasPPM(N2OCurve);
+}

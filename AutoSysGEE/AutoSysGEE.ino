@@ -151,9 +151,10 @@ int GetMQ4(){
   valor_dig = digitalRead(MQ4_dig);
   
   Serial.print(" || ");
-  if(valor_dig == 0)
+  if(valor_dig == 0){
     Serial.println("GAS DETECTADO !!!");
     return valor_analog;
+  }
   else 
     Serial.println("GAS AUSENTE !!!");
     return valor_analog;

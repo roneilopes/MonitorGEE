@@ -117,7 +117,7 @@ void loop()
 
  //Bloco para gravar os dados lidos pelo DHT22 e RTC
  
-  File arquivo = SD.open("DateLog.txt", FILE_WRITE); // Abre o Arquivo
+  File arquivo = SD.open("DadosGEE.txt", FILE_WRITE); // Abre o Arquivo
   if (arquivo) {
     arquivo.print(dataehora.day);      //Armazena no arquivo o Dia
     arquivo.print("/");
@@ -150,7 +150,6 @@ int GetMQ4(){
   valor_analog = analogRead(MQ4_analog); 
   valor_dig = digitalRead(MQ4_dig);
   
-  Serial.print(" || ");
   if(valor_dig == 0){
     return valor_analog;
     Serial.println("GAS DETECTADO !!!");

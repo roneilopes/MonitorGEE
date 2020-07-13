@@ -21,12 +21,21 @@
 #define MQ135_analog A0
 #define MQ135_dig 4
 
+#define VRL_VALOR 5 //resistência de carga
+#define RO_FATOR_AR_LIMPO 9.83 //resistência do sensor em ar limpo 9.83 de acordo com o datasheet
+                                                     
+#define ITERACOES_CALIBRACAO 50    //numero de leituras para calibracao
+#define ITERACOES_LEITURA 5     //numero de leituras para analise
+
+#define GasCH4 0
 #define GasCO2 1
 #define GasN2O 2
 
 int valor_analog;
 int valor_dig;
 int i = 1;
+float Ro4 = 10;
+float Ro135 = 10;
 
 float CH4Curve[3]  =  {2.34,0.25,-0.35};  //curva CH4 aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
                                           //p1: (log220.2466, log1.7793), p2: (log10409,37, log 0,4466)
@@ -50,6 +59,14 @@ RTCDateTime dataehora;     // Declarando o objeto do tipo RTCDateTime
 void setup()
 {
   Serial.begin(9600);     // Iniciando a comunicação Serial
+  Serial.print("Calibrando o sensor MQ2...\n");                
+  Ro4 = MQCalibration(MQ4_analog);      //calibra o sensor MQ2
+  Serial.print("Valor de Ro-MQ4=");
+  Serial.print(Ro4);
+  Serial.println("kohm");
+  Serial.print("Valor de Ro-MQ135=");
+  Serial.print(Ro135);
+  Serial.println("kohm");
   pinMode(MQ4_analog, INPUT);
   pinMode(MQ4_dig, INPUT);
   pinMode(MQ135_analog, INPUT);
@@ -119,7 +136,7 @@ void loop()
   Serial.print(":");
   Serial.print(dataehora.second);   //Imprimindo o Segundo
   Serial.print("\t\t");
-  Serial.print(GetMQ4());   //Imprimindo o Valor de MQ4
+  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro,GasCH4));   //Imprimindo o Valor de MQ4
   Serial.print("\t");
   Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
   Serial.print("\t");
@@ -146,9 +163,9 @@ void loop()
     arquivo.print(GetMQ4());   //Imprimindo o Valor de MQ4
     arquivo.print("\t");
     arquivo.print(GetMQ135(GasCO2));   //Imprimindo o Valor de MQ135 (CO2)
-    arquivo.print("\t");
-    arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
-    arquivo.print("\t");
+    // arquivo.print("\t");
+    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+    // arquivo.print("\t");
     arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
   }
@@ -182,4 +199,58 @@ int GetMQ135(int gasId){
       return calculaGasPPM(CO2Curve);
   // } else if ( gas_id == 2 ) {
   //    return calculaGasPPM(N2OCurve);
+}
+
+float calcularResistencia(int tensao)   //funcao que recebe o tensao (dado cru) e calcula a resistencia efetuada pelo sensor. O sensor e a resistência de carga forma um divisor de tensão. 
+{
+  return (((float)VRL_VALOR*(1023-tensao)/tensao));
+}
+
+float MQCalibration(int mq_pin)   //funcao que calibra o sensor em um ambiente limpo utilizando a resistencia do sensor em ar limpo 9.83
+{
+  int i;
+  float valor=0;
+
+  for (i=0;i<ITERACOES_CALIBRACAO;i++) {    //sao adquiridas diversas amostras e calculada a media para diminuir o efeito de possiveis oscilacoes durante a calibracao
+    valor += calcularResistencia(analogRead(mq_pin));
+    delay(500);
+  }
+  valor = valor/ITERACOES_CALIBRACAO;        
+
+  valor = valor/RO_FATOR_AR_LIMPO; //o valor lido dividido pelo R0 do ar limpo resulta no R0 do ambiente
+
+  return valor; 
+}
+
+float leitura_MQ(int mq_pin)
+{
+  int i;
+  float rs=0;
+
+  for (i=0;i<ITERACOES_LEITURA;i++) {
+    rs += calcularResistencia(analogRead(mq_pin));
+    delay(50);
+  }
+
+  rs = rs/ITERACOES_LEITURA;
+
+  return rs;  
+}
+
+int getQuantidadeGasMQ(float rs_ro, int gas_id)
+{
+  if ( gas_id == 0 ) {
+     return calculaGasPPM(rs_ro,LPGCurve);
+  } else if ( gas_id == 1 ) {
+     return calculaGasPPM(rs_ro,COCurve);
+  } else if ( gas_id == 2 ) {
+     return calculaGasPPM(rs_ro,SmokeCurve);
+  }    
+
+  return 0;
+}
+
+int  calculaGasPPM(float rs_ro, float *pcurve) //Rs/R0 é fornecido para calcular a concentracao em PPM do gas em questao. O calculo eh em potencia de 10 para sair da logaritmica
+{
+  return (pow(10,( ((log(rs_ro)-pcurve[1])/pcurve[2]) + pcurve[0])));
 }

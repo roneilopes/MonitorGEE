@@ -47,8 +47,10 @@ float CO2Curve[3]  =  {1,0.36,-0.35};  //curva CO2 aproximada baseada na sensibi
                                           //inclinacao = (Y2-Y1)/(X2-X1)
                                           //vetor={x, y, inclinacao}
 
-
-
+/*float N2OCurve[3]  =  {x,x.x,-x.xx};  //???curva N2O aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
+                                          //p1: (log10, log2.3), p2: (log200, log0,8)
+                                          //inclinacao = (Y2-Y1)/(X2-X1)
+                                          //vetor={x, y, inclinacao}*/
 
 const int chipSelect = 10; // declarando o pino responsável por ativar o módulo SD
 File arquivo;              //Declarando o objeto responsavel para escrever/ler o arquivo no Cartão SD
@@ -59,19 +61,20 @@ RTCDateTime dataehora;     // Declarando o objeto do tipo RTCDateTime
 void setup()
 {
   Serial.begin(9600);     // Iniciando a comunicação Serial
-  Serial.print("Calibrando o sensor MQ2...\n");                
-  Ro4 = MQCalibration(MQ4_analog);      //calibra o sensor MQ2
-  Serial.print("Valor de Ro-MQ4=");
-  Serial.print(Ro4);
-  Serial.println("kohm");
-  Serial.print("Valor de Ro-MQ135=");
-  Serial.print(Ro135);
-  Serial.println("kohm");
   pinMode(MQ4_analog, INPUT);
   pinMode(MQ4_dig, INPUT);
   pinMode(MQ135_analog, INPUT);
   pinMode(MQ135_dig, INPUT);
-
+  Serial.print("Calibrando o sensores MQ4 e MQ135...\n");                
+  Ro4 = MQCalibration(MQ4_analog);      //calibra o sensor MQ4
+  Serial.print("Valor de Ro-MQ4=");
+  Serial.print(Ro4);
+  Serial.println("kohm");
+  Ro135 = MQCalibration(MQ135_analog);      //calibra o sensor MQ135
+  Serial.print("Valor de Ro-MQ135=");
+  Serial.print(Ro135);
+  Serial.println("kohm");
+  
   rtc.begin();            // Iniciando o RTC DS3231
   //rtc.setDateTime(_DATE, __TIME_);   // Configurando valores iniciais do RTC 3231 (carregar o codigo 2x para o Arduino, sendo que na segunda comente esse comando)
 
@@ -135,12 +138,12 @@ void loop()
   Serial.print(dataehora.minute);   //Imprimindo o Minuto
   Serial.print(":");
   Serial.print(dataehora.second);   //Imprimindo o Segundo
-  Serial.print("\t\t");
-  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro,GasCH4));   //Imprimindo o Valor de MQ4
   Serial.print("\t");
-  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ135 (CO2)
+  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro4,GasCH4));   //Imprimindo o valor de CH4 com o MQ4
   Serial.print("\t");
-  Serial.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Imprimindo o valor de CO2 lido com MQ135
+  Serial.print("\t");
+  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasN2O));   //Imprimindo o valor de N2O lido com MQ-135
   Serial.print("\t");
   Serial.println("");
 
@@ -160,11 +163,11 @@ void loop()
     arquivo.print(":");
     arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
     arquivo.print("\t\t");
-    arquivo.print(GetMQ4());   //Imprimindo o Valor de MQ4
+    arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro4,GasCH4));   //Armazena o valor de CH4 captado pelo MQ4
     arquivo.print("\t");
-    arquivo.print(GetMQ135(GasCO2));   //Imprimindo o Valor de MQ135 (CO2)
+    arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Armazena o valor de CO2 captado pelo MQ135
     // arquivo.print("\t");
-    // arquivo.print(GetMQ135());   //Imprimindo o Valor de MQ-135(N2O)
+    // arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasN2O));   //Imprimindo o valor de N2O lido com MQ-135
     // arquivo.print("\t");
     arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
@@ -173,32 +176,6 @@ void loop()
   delay (3000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
   i += 1;
 
-}
-
-int GetMQ4() {
-  valor_analog = analogRead(MQ4_analog);
-  valor_dig = digitalRead(MQ4_dig);
-  return valor_analog;
-  delay(500);
-}
-
-int GetMQ135(int gasId){
-  valor_analog = analogRead(MQ135_analog);
-  valor_dig = digitalRead(MQ135_dig);
-  return valor_analog;
-  // if(valor_dig == 0){
-  //   Serial.println("GAS DETECTADO !!!");
-  //   return valor_analog;
-  // }
-  // else{
-  //   Serial.println("GAS AUSENTE !!!");
-  //   return valor_analog;
-  // }
-  delay(500);
-  if ( gasId == 1 ) {
-      return calculaGasPPM(CO2Curve);
-  // } else if ( gas_id == 2 ) {
-  //    return calculaGasPPM(N2OCurve);
 }
 
 float calcularResistencia(int tensao)   //funcao que recebe o tensao (dado cru) e calcula a resistencia efetuada pelo sensor. O sensor e a resistência de carga forma um divisor de tensão. 
@@ -237,20 +214,20 @@ float leitura_MQ(int mq_pin)
   return rs;  
 }
 
+int calculaGasPPM(float rs_ro, float *pcurve) //Rs/R0 é fornecido para calcular a concentracao em PPM do gas em questao. O calculo eh em potencia de 10 para sair da logaritmica
+{
+  return (pow(10,( ((log(rs_ro)-pcurve[1])/pcurve[2]) + pcurve[0])));
+}
+
 int getQuantidadeGasMQ(float rs_ro, int gas_id)
 {
   if ( gas_id == 0 ) {
-     return calculaGasPPM(rs_ro,LPGCurve);
+     return calculaGasPPM(rs_ro,CH4Curve);
   } else if ( gas_id == 1 ) {
-     return calculaGasPPM(rs_ro,COCurve);
-  } else if ( gas_id == 2 ) {
-     return calculaGasPPM(rs_ro,SmokeCurve);
-  }    
+     return calculaGasPPM(rs_ro,CO2Curve);
+  }/*else if ( gas_id == 2 ) {
+     return calculaGasPPM(rs_ro,N2OCurve);
+  } */   
 
   return 0;
-}
-
-int  calculaGasPPM(float rs_ro, float *pcurve) //Rs/R0 é fornecido para calcular a concentracao em PPM do gas em questao. O calculo eh em potencia de 10 para sair da logaritmica
-{
-  return (pow(10,( ((log(rs_ro)-pcurve[1])/pcurve[2]) + pcurve[0])));
 }

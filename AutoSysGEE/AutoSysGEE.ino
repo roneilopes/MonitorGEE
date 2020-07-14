@@ -143,7 +143,7 @@ void loop()
   Serial.print("\t");
   Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Imprimindo o valor de CO2 lido com MQ135
   Serial.print("\t");
-  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasN2O));   //Imprimindo o valor de N2O lido com MQ-135
+  Serial.print(analogRead(MQ135_analog));   //Imprimindo o valor bruto do MQ-135
   Serial.print("\t");
   Serial.println("");
 
@@ -166,9 +166,9 @@ void loop()
     arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro4,GasCH4));   //Armazena o valor de CH4 captado pelo MQ4
     arquivo.print("\t");
     arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Armazena o valor de CO2 captado pelo MQ135
-    // arquivo.print("\t");
-    // arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasN2O));   //Imprimindo o valor de N2O lido com MQ-135
-    // arquivo.print("\t");
+    arquivo.print("\t");
+    arquivo.print(analogRead(MQ135_analog));   //Armazenando o valor bruto do MQ-135
+    arquivo.print("\t");
     arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
   }

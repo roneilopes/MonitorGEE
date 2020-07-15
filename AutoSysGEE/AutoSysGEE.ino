@@ -18,8 +18,8 @@
 
 #define MQ4_analog A2
 #define MQ4_dig 2
-#define MQ135_analog A0
-#define MQ135_dig 4
+#define MQ135_analog A1
+#define MQ135_dig 8
 
 #define VRL_VALOR 5 //resistência de carga
 #define RO_FATOR_AR_LIMPO 9.83 //resistência do sensor em ar limpo 9.83 de acordo com o datasheet
@@ -163,9 +163,9 @@ void loop()
     arquivo.print(":");
     arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
     arquivo.print("\t\t");
-    arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro4,GasCH4));   //Armazena o valor de CH4 captado pelo MQ4
+    arquivo.print(getQuantidadeGasMQ((leitura_MQ(MQ4_analog)/Ro4),GasCH4));   //Armazena o valor de CH4 captado pelo MQ4
     arquivo.print("\t");
-    arquivo.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Armazena o valor de CO2 captado pelo MQ135
+    arquivo.print(getQuantidadeGasMQ((leitura_MQ(MQ135_analog)/Ro135),GasCO2));   //Armazena o valor de CO2 captado pelo MQ135
     arquivo.print("\t");
     arquivo.print(analogRead(MQ135_analog));   //Armazenando o valor bruto do MQ-135
     arquivo.print("\t");

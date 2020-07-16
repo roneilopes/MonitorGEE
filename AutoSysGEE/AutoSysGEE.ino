@@ -5,7 +5,7 @@
   Componentes utilizados:
   • Microcontrolador Arduino UNO R3;
   • Sensor MQ4 -> Conexão: **1º Perna -> GND, 2º -> pin 2, 3° -> A2, 4º -> 5v;
-  • Sensor MQ-135 -> Conexão: **1º Perna -> GND, 2º -> pin 4, 3° -> A0, 4º -> 5v;
+  • Sensor MQ-135 -> Conexão: **1º Perna -> VCC (5v), 2º -> GND, 3° -> A1, 4º -> pin 8;
   • Módulo Micro SD -> Conexão: * MOSI -> pin 11, * MISO -> pin 12,  * CLK -> pin 13, * CS -> pin 10;
   • Módulo RTC DS3231 -> Conexão: *GND -> GND, * VCC -> 5v,  * SDA -> A4, * SCL -> A5;
   • protoboard 400 furos.
@@ -21,36 +21,9 @@
 #define MQ135_analog A1
 #define MQ135_dig 8
 
-#define VRL_VALOR 5 //resistência de carga
-#define RO_FATOR_AR_LIMPO 9.83 //resistência do sensor em ar limpo 9.83 de acordo com o datasheet
-                                                     
-#define ITERACOES_CALIBRACAO 50    //numero de leituras para calibracao
-#define ITERACOES_LEITURA 5     //numero de leituras para analise
-
-#define GasCH4 0
-#define GasCO2 1
-#define GasN2O 2
-
 int valor_analog;
 int valor_dig;
 int i = 1;
-float Ro4 = 10;
-float Ro135 = 10;
-
-float CH4Curve[3]  =  {2.34,0.25,-0.35};  //curva CH4 aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
-                                          //p1: (log220.2466, log1.7793), p2: (log10409,37, log 0,4466)
-                                          //inclinacao = (Y2-Y1)/(X2-X1)
-                                          //vetor={x, y, inclinacao}
-
-float CO2Curve[3]  =  {1,0.36,-0.35};  //curva CO2 aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
-                                          //p1: (log10, log2.3), p2: (log200, log0,8)
-                                          //inclinacao = (Y2-Y1)/(X2-X1)
-                                          //vetor={x, y, inclinacao}
-
-/*float N2OCurve[3]  =  {x,x.x,-x.xx};  //???curva N2O aproximada baseada na sensibilidade descrita no datasheet {x,y,deslocamento} baseada em dois pontos 
-                                          //p1: (log10, log2.3), p2: (log200, log0,8)
-                                          //inclinacao = (Y2-Y1)/(X2-X1)
-                                          //vetor={x, y, inclinacao}*/
 
 const int chipSelect = 10; // declarando o pino responsável por ativar o módulo SD
 File arquivo;              //Declarando o objeto responsavel para escrever/ler o arquivo no Cartão SD
@@ -65,16 +38,7 @@ void setup()
   pinMode(MQ4_dig, INPUT);
   pinMode(MQ135_analog, INPUT);
   pinMode(MQ135_dig, INPUT);
-  Serial.print("Calibrando o sensores MQ4 e MQ135...\n");                
-  Ro4 = MQCalibration(MQ4_analog);      //calibra o sensor MQ4
-  Serial.print("Valor de Ro-MQ4=");
-  Serial.print(Ro4);
-  Serial.println("kohm");
-  Ro135 = MQCalibration(MQ135_analog);      //calibra o sensor MQ135
-  Serial.print("Valor de Ro-MQ135=");
-  Serial.print(Ro135);
-  Serial.println("kohm");
-  
+    
   rtc.begin();            // Iniciando o RTC DS3231
   //rtc.setDateTime(_DATE, __TIME_);   // Configurando valores iniciais do RTC 3231 (carregar o codigo 2x para o Arduino, sendo que na segunda comente esse comando)
 
@@ -138,10 +102,10 @@ void loop()
   Serial.print(dataehora.minute);   //Imprimindo o Minuto
   Serial.print(":");
   Serial.print(dataehora.second);   //Imprimindo o Segundo
+  Serial.print("\t  ");
+  Serial.print(analogRead(MQ4_analog));   //Imprime o valor bruto captado pelo MQ4
   Serial.print("\t");
-  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ4_analog)/Ro4,GasCH4));   //Imprimindo o valor de CH4 com o MQ4
-  Serial.print("\t");
-  Serial.print(getQuantidadeGasMQ(leitura_MQ(MQ135_analog)/Ro135,GasCO2));   //Imprimindo o valor de CO2 lido com MQ135
+  Serial.print(analogRead(MQ135_analog));   //Imprime o valor bruto captado pelo MQ135
   Serial.print("\t");
   Serial.print(analogRead(MQ135_analog));   //Imprimindo o valor bruto do MQ-135
   Serial.print("\t");
@@ -162,12 +126,12 @@ void loop()
     arquivo.print(dataehora.minute);   //Armazena no arquivo o Minuto
     arquivo.print(":");
     arquivo.print(dataehora.second);   //Armazena no arquivo o Segundo
-    arquivo.print("\t\t");
-    arquivo.print(getQuantidadeGasMQ((leitura_MQ(MQ4_analog)/Ro4),GasCH4));   //Armazena o valor de CH4 captado pelo MQ4
+    arquivo.print("\t  ");
+    arquivo.print(analogRead(MQ4_analog));   //Armazena o valor bruto captado pelo MQ4 para CH4
     arquivo.print("\t");
-    arquivo.print(getQuantidadeGasMQ((leitura_MQ(MQ135_analog)/Ro135),GasCO2));   //Armazena o valor de CO2 captado pelo MQ135
+    arquivo.print(analogRead(MQ135_analog));   //Armazena o valor bruto captado pelo MQ135 para CO2
     arquivo.print("\t");
-    arquivo.print(analogRead(MQ135_analog));   //Armazenando o valor bruto do MQ-135
+    arquivo.print(analogRead(MQ135_analog));   //Armazenando o valor bruto do MQ-135 para N2O
     arquivo.print("\t");
     arquivo.println("");
     arquivo.close();           // Fechamos o arquivo
@@ -176,58 +140,4 @@ void loop()
   delay (3000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
   i += 1;
 
-}
-
-float calcularResistencia(int tensao)   //funcao que recebe o tensao (dado cru) e calcula a resistencia efetuada pelo sensor. O sensor e a resistência de carga forma um divisor de tensão. 
-{
-  return (((float)VRL_VALOR*(1023-tensao)/tensao));
-}
-
-float MQCalibration(int mq_pin)   //funcao que calibra o sensor em um ambiente limpo utilizando a resistencia do sensor em ar limpo 9.83
-{
-  int i;
-  float valor=0;
-
-  for (i=0;i<ITERACOES_CALIBRACAO;i++) {    //sao adquiridas diversas amostras e calculada a media para diminuir o efeito de possiveis oscilacoes durante a calibracao
-    valor += calcularResistencia(analogRead(mq_pin));
-    delay(500);
-  }
-  valor = valor/ITERACOES_CALIBRACAO;        
-
-  valor = valor/RO_FATOR_AR_LIMPO; //o valor lido dividido pelo R0 do ar limpo resulta no R0 do ambiente
-
-  return valor; 
-}
-
-float leitura_MQ(int mq_pin)
-{
-  int i;
-  float rs=0;
-
-  for (i=0;i<ITERACOES_LEITURA;i++) {
-    rs += calcularResistencia(analogRead(mq_pin));
-    delay(50);
-  }
-
-  rs = rs/ITERACOES_LEITURA;
-
-  return rs;  
-}
-
-int calculaGasPPM(float rs_ro, float *pcurve) //Rs/R0 é fornecido para calcular a concentracao em PPM do gas em questao. O calculo eh em potencia de 10 para sair da logaritmica
-{
-  return (pow(10,( ((log(rs_ro)-pcurve[1])/pcurve[2]) + pcurve[0])));
-}
-
-int getQuantidadeGasMQ(float rs_ro, int gas_id)
-{
-  if ( gas_id == 0 ) {
-     return calculaGasPPM(rs_ro,CH4Curve);
-  } else if ( gas_id == 1 ) {
-     return calculaGasPPM(rs_ro,CO2Curve);
-  }/*else if ( gas_id == 2 ) {
-     return calculaGasPPM(rs_ro,N2OCurve);
-  } */   
-
-  return 0;
 }

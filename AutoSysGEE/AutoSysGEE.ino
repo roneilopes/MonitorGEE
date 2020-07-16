@@ -80,7 +80,7 @@ void setup()
   else {
     Serial.println("Erro ao Abrir Arquivo .txt"); // Imprime na tela caso ocorra erro ao abrir o arquivo
   }
-  delay (1500);
+  delay (18000); //3min de espera para esquentar o sensor
 }
 
 void loop()
@@ -137,7 +137,7 @@ void loop()
     arquivo.close();           // Fechamos o arquivo
   }
 
-  delay (3000); // Intervalo de 15 minutos para a proxima leitura e gravação no arquivo
+  delay (300000); // Intervalo de 5 minutos para a proxima leitura e gravação no arquivo
   i += 1;
 
 }
